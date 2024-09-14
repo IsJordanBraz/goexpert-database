@@ -13,12 +13,19 @@ type Category struct {
 	Name string
 }
 
+type SerialNumber struct {
+	ID        uint `gorm:"primarykey"`
+	Number    string
+	ProductID uint
+}
+
 type Product struct {
 	gorm.Model
-	Name       string
-	Price      float64
-	CategoryID uint
-	Category   Category
+	Name         string
+	Price        float64
+	CategoryID   uint
+	Category     Category
+	SerialNumber SerialNumber
 }
 
 func main() {
@@ -28,41 +35,27 @@ func main() {
 		panic(err)
 	}
 
-	db.AutoMigrate(&Product{}, &Category{})
+	db.AutoMigrate(&Product{}, &Category{}, &SerialNumber{})
 
-	category := Category{Name: "Banho"}
+	category := Category{Name: "Banho E Tosa"}
 	db.Create(&category)
 
-	db.Create(&Product{
-		Name:       "D42",
+	product := Product{
+		Name:       "Shampo",
 		Price:      100.0,
 		CategoryID: category.ID,
+	}
+	db.Create(&product)
+
+	db.Create(&SerialNumber{
+		Number:    "12345",
+		ProductID: product.ID,
 	})
 
-	// products := []Product{
-	// 	{Name: "test1", Price: 1.0},
-	// 	{Name: "test2", Price: 2.0},
-	// 	{Name: "test3", Price: 3.0},
-	// }
-
-	// db.Create(products)
-
-	// var product Product
-	// db.First(&product, 1)
-	// db.First(&product, "name = ?", "test1")
-
-	// db.Model(&product).Update("Price", 200)
-
-	// db.Model(&product).Updates(Product{Price: 200, Name: "F42"})
-	// db.Model(&product).Updates(map[string]interface{}{"Price": 200, "Name": "F42"})
-
-	// db.Delete(&product, 1)
-
 	var products []Product
-	// db.Limit(2).Offset(2).Find(&products)
-	db.Preload("Category").Find(&products)
+	db.Preload("Category").Preload("SerialNumber").Find(&products)
 	for _, product := range products {
-		fmt.Println(product.Category.Name)
+		fmt.Println(product.SerialNumber.Number)
 	}
 	fmt.Printf("TOTAL: %v\n", len(products))
 }
