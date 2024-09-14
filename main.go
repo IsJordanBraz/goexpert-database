@@ -11,15 +11,14 @@ import (
 type Category struct {
 	ID       uint `gorm:"primarykey"`
 	Name     string
-	Products []Product
+	Products []Product `gorm:"many2many:products_categories;"`
 }
 
 type Product struct {
 	gorm.Model
 	Name       string
 	Price      float64
-	CategoryID uint
-	Category   Category
+	Categories []Category `gorm:"many2many:products_categories;"`
 }
 
 func main() {
@@ -31,13 +30,16 @@ func main() {
 
 	db.AutoMigrate(&Product{}, &Category{})
 
-	newCategory := Category{Name: "Banho E Tosa"}
-	db.Create(&newCategory)
+	newCategory1 := Category{Name: "Banho"}
+	db.Create(&newCategory1)
+
+	newCategory2 := Category{Name: "Eletro"}
+	db.Create(&newCategory2)
 
 	newProduct := Product{
 		Name:       "Shampo",
 		Price:      100.0,
-		CategoryID: newCategory.ID,
+		Categories: []Category{newCategory1, newCategory2},
 	}
 	db.Create(&newProduct)
 
@@ -48,8 +50,9 @@ func main() {
 	}
 
 	for _, category := range categories {
+		fmt.Println(category.Name)
 		for _, product := range category.Products {
-			fmt.Println(product.Name, category.Name)
+			fmt.Println("-", product.Name)
 		}
 	}
 }
