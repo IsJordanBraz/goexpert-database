@@ -1,11 +1,10 @@
 package main
 
 import (
-	"fmt"
-
 	_ "github.com/go-sql-driver/mysql"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type Category struct {
@@ -30,29 +29,13 @@ func main() {
 
 	db.AutoMigrate(&Product{}, &Category{})
 
-	newCategory1 := Category{Name: "Banho"}
-	db.Create(&newCategory1)
-
-	newCategory2 := Category{Name: "Eletro"}
-	db.Create(&newCategory2)
-
-	newProduct := Product{
-		Name:       "Shampo",
-		Price:      100.0,
-		Categories: []Category{newCategory1, newCategory2},
-	}
-	db.Create(&newProduct)
-
-	var categories []Category
-	err = db.Model(&Category{}).Preload("Products").Find(&categories).Error
+	tx := db.Begin()
+	var c Category
+	err = tx.Debug().Clauses(clause.Locking{Strength: "UPDATE"}).First(&c, 1).Error
 	if err != nil {
 		panic(err)
 	}
-
-	for _, category := range categories {
-		fmt.Println(category.Name)
-		for _, product := range category.Products {
-			fmt.Println("-", product.Name)
-		}
-	}
+	c.Name = "Eletronicos"
+	tx.Debug().Save(&c)
+	tx.Commit()
 }
