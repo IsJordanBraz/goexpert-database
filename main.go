@@ -9,23 +9,17 @@ import (
 )
 
 type Category struct {
-	ID   uint `gorm:"primarykey"`
-	Name string
-}
-
-type SerialNumber struct {
-	ID        uint `gorm:"primarykey"`
-	Number    string
-	ProductID uint
+	ID       uint `gorm:"primarykey"`
+	Name     string
+	Products []Product
 }
 
 type Product struct {
 	gorm.Model
-	Name         string
-	Price        float64
-	CategoryID   uint
-	Category     Category
-	SerialNumber SerialNumber
+	Name       string
+	Price      float64
+	CategoryID uint
+	Category   Category
 }
 
 func main() {
@@ -35,27 +29,27 @@ func main() {
 		panic(err)
 	}
 
-	db.AutoMigrate(&Product{}, &Category{}, &SerialNumber{})
+	db.AutoMigrate(&Product{}, &Category{})
 
-	category := Category{Name: "Banho E Tosa"}
-	db.Create(&category)
+	newCategory := Category{Name: "Banho E Tosa"}
+	db.Create(&newCategory)
 
-	product := Product{
+	newProduct := Product{
 		Name:       "Shampo",
 		Price:      100.0,
-		CategoryID: category.ID,
+		CategoryID: newCategory.ID,
 	}
-	db.Create(&product)
+	db.Create(&newProduct)
 
-	db.Create(&SerialNumber{
-		Number:    "12345",
-		ProductID: product.ID,
-	})
-
-	var products []Product
-	db.Preload("Category").Preload("SerialNumber").Find(&products)
-	for _, product := range products {
-		fmt.Println(product.SerialNumber.Number)
+	var categories []Category
+	err = db.Model(&Category{}).Preload("Products").Find(&categories).Error
+	if err != nil {
+		panic(err)
 	}
-	fmt.Printf("TOTAL: %v\n", len(products))
+
+	for _, category := range categories {
+		for _, product := range category.Products {
+			fmt.Println(product.Name, category.Name)
+		}
+	}
 }
